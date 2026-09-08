@@ -122,6 +122,12 @@ const Layout = ({ children }) => {
                 aria-label="Toggle theme">
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
+              <button onClick={logout}
+                className="p-2 rounded-xl text-gray-500 hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+                title={t('nav.logout')}
+                aria-label={t('nav.logout')}>
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </header>

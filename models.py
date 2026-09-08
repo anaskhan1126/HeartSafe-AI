@@ -32,6 +32,8 @@ class User:
 
     @staticmethod
     def find_by_id(user_id):
+        if not user_id or not ObjectId.is_valid(str(user_id)):
+            return None
         return User._col().find_one({'_id': ObjectId(user_id)})
 
     @staticmethod
@@ -47,6 +49,8 @@ class User:
 
     @staticmethod
     def find_patients_by_doctor(doctor_id, page=1, per_page=10):
+        if not doctor_id or not ObjectId.is_valid(str(doctor_id)):
+            return [], 0
         query = {'role': 'patient', 'assignedDoctorId': ObjectId(doctor_id)}
         skip = (page - 1) * per_page
         cursor = User._col().find(query).sort('name', 1).skip(skip).limit(per_page)
@@ -139,6 +143,8 @@ class PredictionRecord:
 
     @staticmethod
     def find_by_user(user_id, page=1, per_page=10, filters=None, sort_by='timestamp', sort_order='desc'):
+        if not user_id or not ObjectId.is_valid(str(user_id)):
+            return [], 0
         query = {'userId': ObjectId(user_id)}
         if filters:
             query.update(filters)
@@ -146,7 +152,10 @@ class PredictionRecord:
 
     @staticmethod
     def find_by_users(user_ids, page=1, per_page=10, filters=None, sort_by='timestamp', sort_order='desc'):
-        query = {'userId': {'$in': [ObjectId(uid) for uid in user_ids]}}
+        valid_ids = [ObjectId(uid) for uid in user_ids if uid and ObjectId.is_valid(str(uid))]
+        if not valid_ids:
+            return [], 0
+        query = {'userId': {'$in': valid_ids}}
         if filters:
             query.update(filters)
         return PredictionRecord._paginate(query, page, per_page, sort_by, sort_order)
@@ -168,16 +177,24 @@ class PredictionRecord:
 
     @staticmethod
     def find_by_id(record_id):
+        if not record_id or not ObjectId.is_valid(str(record_id)):
+            return None
         return PredictionRecord._col().find_one({'_id': ObjectId(record_id)})
 
     @staticmethod
     def count_by_user(user_id):
+        if not user_id or not ObjectId.is_valid(str(user_id)):
+            return 0
         return PredictionRecord._col().count_documents({'userId': ObjectId(user_id)})
 
     @staticmethod
     def delete(record_id, user_id=None):
+        if not record_id or not ObjectId.is_valid(str(record_id)):
+            return False
         query = {'_id': ObjectId(record_id)}
         if user_id:
+            if not ObjectId.is_valid(str(user_id)):
+                return False
             query['userId'] = ObjectId(user_id)
         result = PredictionRecord._col().delete_one(query)
         return result.deleted_count > 0
@@ -199,12 +216,18 @@ class PredictionRecord:
     @staticmethod
     def build_date_filter(start_date=None, end_date=None):
         date_filter = {}
-        if start_date:
-            date_filter['$gte'] = datetime.fromisoformat(start_date.replace('Z', ''))
-        if end_date:
-            end = datetime.fromisoformat(end_date.replace('Z', ''))
-            end = end.replace(hour=23, minute=59, second=59)
-            date_filter['$lte'] = end
+        if start_date and isinstance(start_date, str) and start_date.strip():
+            try:
+                date_filter['$gte'] = datetime.fromisoformat(start_date.strip().replace('Z', ''))
+            except (ValueError, TypeError):
+                pass
+        if end_date and isinstance(end_date, str) and end_date.strip():
+            try:
+                end = datetime.fromisoformat(end_date.strip().replace('Z', ''))
+                end = end.replace(hour=23, minute=59, second=59)
+                date_filter['$lte'] = end
+            except (ValueError, TypeError):
+                pass
         if date_filter:
             return {'timestamp': date_filter}
         return {}

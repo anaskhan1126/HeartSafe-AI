@@ -4,7 +4,13 @@ import extensions
 
 
 def _oid(val):
-    return ObjectId(val) if val and not isinstance(val, ObjectId) else val
+    if not val:
+        return None
+    if isinstance(val, ObjectId):
+        return val
+    if isinstance(val, str) and ObjectId.is_valid(val):
+        return ObjectId(val)
+    return None
 
 
 class Consultation:

@@ -6,16 +6,26 @@ import extensions
 def _base_match(user_ids=None, start_date=None, end_date=None):
     match = {}
     if user_ids:
-        match['userId'] = {'$in': [ObjectId(uid) for uid in user_ids]}
+        valid_ids = [ObjectId(uid) for uid in user_ids if uid and ObjectId.is_valid(str(uid))]
+        if valid_ids:
+            match['userId'] = {'$in': valid_ids}
     if start_date or end_date:
         ts = {}
-        if start_date:
-            ts['$gte'] = datetime.fromisoformat(start_date.replace('Z', ''))
-        if end_date:
-            end = datetime.fromisoformat(end_date.replace('Z', ''))
-            ts['$lte'] = end.replace(hour=23, minute=59, second=59)
-        match['timestamp'] = ts
+        if start_date and isinstance(start_date, str) and start_date.strip():
+            try:
+                ts['$gte'] = datetime.fromisoformat(start_date.strip().replace('Z', ''))
+            except (ValueError, TypeError):
+                pass
+        if end_date and isinstance(end_date, str) and end_date.strip():
+            try:
+                end = datetime.fromisoformat(end_date.strip().replace('Z', ''))
+                ts['$lte'] = end.replace(hour=23, minute=59, second=59)
+            except (ValueError, TypeError):
+                pass
+        if ts:
+            match['timestamp'] = ts
     return match
+
 
 
 def get_dashboard_stats(user_ids=None, start_date=None, end_date=None):

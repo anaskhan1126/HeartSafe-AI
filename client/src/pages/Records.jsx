@@ -83,13 +83,17 @@ const Records = () => {
                       <Calendar className="w-4 h-4" />{formatDate(record.timestamp)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                      {Object.entries(record.inputs).slice(0, 8).map(([k, v]) => (
-                        <div key={k}>
-                          <p className="text-xs text-gray-500">{k}</p>
-                          <p className="font-semibold text-sm">{v}</p>
-                        </div>
-                      ))}
+                      {Object.entries(record.inputs)
+                        .filter(([_, v]) => v !== null && typeof v !== 'object')
+                        .slice(0, 8)
+                        .map(([k, v]) => (
+                          <div key={k}>
+                            <p className="text-xs text-gray-500">{k}</p>
+                            <p className="font-semibold text-sm">{String(v)}</p>
+                          </div>
+                        ))}
                     </div>
+
                   </div>
                   <button onClick={() => handleDelete(record.id)}
                     className="ml-4 p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
